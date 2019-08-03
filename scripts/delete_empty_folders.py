@@ -1,6 +1,3 @@
-'''
-Borra directorios sin fotos
-'''
 import os
 import sys
 
