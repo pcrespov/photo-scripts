@@ -31,7 +31,8 @@ def process_duplicates(top_path):
               print("borrando", os.path.basename(duplicate), "...")
               send2trash(duplicate)
           else:
-            print("renombrando", os.path.basename(duplicate), "->", os.path.basename(original))
+            print("renombrando", os.path.basename(
+                duplicate), "->", os.path.basename(original))
             os.rename(duplicate, original)
 
     for dir in dirs:
