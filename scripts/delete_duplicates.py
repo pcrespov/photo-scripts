@@ -4,37 +4,13 @@ import hashlib
 import os
 import re
 import sys
-from functools import wraps, lru_cache
 from send2trash import send2trash
+
+from decorators import count_calls, func_runner
 
 # Like 
 DUPLICATE_PATTERN = re.compile(r"(.+)\s*\(\d\)")
 PATTERN = re.compile(r"(.+)\s*(\(\d\)|copia|-\d{3})")
-
-
-def count_calls(func):
-  calls_count = 0
-  success_count = 0
-  failed_count = 0
-
-  @wraps(func)
-  def wrapper(*args, **kargs):
-    nonlocal calls_count, success_count, failed_count
-    try:
-      calls_count +=1
-      result = func(*args, **kargs)
-      success_count +=1
-    except:
-      failed_count+=1
-      raise
-    return result
-
-  def counts():
-    return success_count, failed_count, calls_count
-
-  wrapper.counts = counts
-
-  return wrapper
 
 
 def eval_image_hash(image_path):
@@ -47,16 +23,20 @@ def eval_image_hash(image_path):
 
 
 @count_calls
-def delete_file(path, dry_run):
-  msg = "Would delete" if dry_run else "Deleting"
-  print(msg, os.path.basename(path), "...")
-  if not dry_run:
-    send2trash(duplicate)
+def delete_file(file_path, dry_run):
+  func_runner(send2trash, file_path,
+              dry_run=dry_run, 
+              extra_msg=f"{os.path.basename(file_path)} ...")
+
+@count_calls
+def rename_file(from_path, to_path, dry_run):
+  func_runner(os.rename, from_path, to_path,
+              dry_run=dry_run,
+              extra_msg=f"{os.path.basename(from_path)} -> {os.path.basename(to_path)} ...")
 
 def process_duplicates(top_path, *, dry_run=False):
-  num_hits = 0
-  for root, dirs, files in os.walk(top_path):
 
+  for root, dirs, files in os.walk(top_path):
     for filename in files:
       name, ext = os.path.splitext(filename)
       for suffix in [' (2)', '-001', ' - copia']:
@@ -70,11 +50,7 @@ def process_duplicates(top_path, *, dry_run=False):
             if os.stat(duplicate).st_size == os.stat(original).st_size:
               delete_file(duplicate, dry_run)
           else:
-            msg = "Would rename" if dry_run else "Renaming"
-            print(msg, os.path.basename(
-                duplicate), "->", os.path.basename(original))
-            if not dry_run:
-              os.rename(duplicate, original)
+            rename_file(duplicate, original, dry_run)
 
     dirs[:] = [ dirname for dirname in dirs if not dirname.startswith(".") ]
 
@@ -89,3 +65,4 @@ if __name__ == "__main__":
   process_duplicates(top, dry_run="--dry-run" in ops)
 
   print("Deleted", delete_file.counts())
+  print("Renamed", rename_file.counts())
