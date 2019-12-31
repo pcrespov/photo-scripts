@@ -1,6 +1,6 @@
+import logging
 import os
 import sys
-import logging
 
 from send2trash import send2trash
 

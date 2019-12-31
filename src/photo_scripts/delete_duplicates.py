@@ -1,11 +1,12 @@
 
 
 import hashlib
+import logging
 import os
 import re
 import sys
+
 from send2trash import send2trash
-import logging
 
 from decorators import count_calls, func_runner
 

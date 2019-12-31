@@ -11,10 +11,14 @@ help: ## This help.
 
 .DEFAULT_GOAL := help
 
-.venv: ##  Creates python virtual environment
-	@python3 -m venv .venv
+.venv: 
+	@python3 -m venv $@
+
+.PHONY: devenv
+devenv: .venv ##  Creates python virtual environment
 	@.venv/bin/pip install --upgrade pip wheel setuptools
 	@.venv/bin/pip install -r requirements.txt
 
+.PHONY: clean
 clean: 
 	@rm -rf .venv
