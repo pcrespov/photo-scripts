@@ -19,6 +19,12 @@ devenv: .venv ##  Creates python virtual environment
 	@.venv/bin/pip install --upgrade pip wheel setuptools
 	@.venv/bin/pip install -r requirements.txt
 
+install-dev: ## install dev
+	# installing
+	@pip install -e .
+	# installed
+	@pip list 
+
 .PHONY: clean
 clean: 
 	@rm -rf .venv
