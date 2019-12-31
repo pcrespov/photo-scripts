@@ -1,14 +1,16 @@
 import functools
+import logging
 from collections import Counter, namedtuple
 from copy import deepcopy
 
+log = logging.getLogger(__name__)
 
 def func_runner(func, *args, dry_run=False, extra_msg="", **kargs):
   if dry_run:
     print(f"Would run {func.__name__}", extra_msg)
     res = None
   else:
-    print(f"Running {func.__name__}", extra_msg)
+    log.debug("Running %s %s", func.__name__, extra_msg)
     res = func(*args, **kargs)
   return res
 
