@@ -5,13 +5,14 @@ import os
 import re
 import sys
 from send2trash import send2trash
+import logging
 
 from decorators import count_calls, func_runner
 
-# Like 
-DUPLICATE_PATTERN = re.compile(r"(.+)\s*\(\d\)")
-PATTERN = re.compile(r"(.+)\s*(\(\d\)|copia|-\d{3})")
+log = logging.getLogger(__name__)
 
+# Copies are names using the following pattern 
+PATTERN = re.compile(r"(\(\d\)|copia|copy|-\d{3})\s*\.\w{3,4}$")
 
 def eval_image_hash(image_path):
   ''' Evaluates hash of a given image file'''
@@ -21,6 +22,21 @@ def eval_image_hash(image_path):
     image_hash = hashlib.md5(image_file).hexdigest()
   return image_hash
 
+def search_pattern(top):
+  for root, dirs, files in os.walk(top):
+    for name in files:
+      m = PATTERN.search(name)
+      if m:
+        _, ext = os.path.splitext(name)
+        renamed = name[0:m.start()].strip() + ext
+
+        duplicate = os.path.join(root, name)
+        original = os.path.join(root, renamed)
+        
+        yield original, duplicate
+
+        log.debug("%s --> %s", os.path.join(root,name), renamed)
+    dirs[:] = [dirname for dirname in dirs if not dirname.startswith(".")]
 
 @count_calls
 def delete_file(file_path, dry_run):
@@ -34,25 +50,19 @@ def rename_file(from_path, to_path, dry_run):
               dry_run=dry_run,
               extra_msg=f"{os.path.basename(from_path)} -> {os.path.basename(to_path)} ...")
 
-def process_duplicates(top_path, *, dry_run=False):
+def main(top_path, *, dry_run=False):
+  """
+    Deletes or renames files found as duplicates under top_path
+  """
+  for original, duplicate in search_pattern(top_path):
+    if os.path.exists(original):
+      if os.stat(duplicate).st_size == os.stat(original).st_size:
+          delete_file(duplicate, dry_run)
+    else:
+      rename_file(duplicate, original, dry_run)
 
-  for root, dirs, files in os.walk(top_path):
-    for filename in files:
-      name, ext = os.path.splitext(filename)
-      for suffix in [' (2)', '-001', ' - copia']:
-        if filename.endswith(suffix + ext):
-          suffixless = name[:-len(suffix)] + ext # without suffix
-          # print good, name
-          original = os.path.join(root, suffixless)
-          duplicate = os.path.join(root, filename)
-
-          if os.path.exists(original):
-            if os.stat(duplicate).st_size == os.stat(original).st_size:
-              delete_file(duplicate, dry_run)
-          else:
-            rename_file(duplicate, original, dry_run)
-
-    dirs[:] = [ dirname for dirname in dirs if not dirname.startswith(".") ]
+  log.info("Deleted", delete_file.counts())
+  log.info("Renamed", rename_file.counts())
 
 
 if __name__ == "__main__":
@@ -62,7 +72,5 @@ if __name__ == "__main__":
 
   top = sys.argv[-1]
   ops = sys.argv[1:-1]
-  process_duplicates(top, dry_run="--dry-run" in ops)
-
-  print("Deleted", delete_file.counts())
-  print("Renamed", rename_file.counts())
+  main(top, dry_run="--dry-run" in ops)
+  #search_pattern(top)
