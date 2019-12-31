@@ -1,9 +1,15 @@
 import os
 import sys
+import logging
 
 from send2trash import send2trash
 
-def delemptydirs(top_path, *, dry_run=False):
+log = logging.getLogger(__name__)
+
+def main(top_path, *, dry_run=False):
+  """
+    Deletes empty folders under top_path
+  """
   del_dirs = []
   for root, dirs, files in os.walk(top_path):
     if len(dirs) == 0 and len(files) <= 1:
@@ -13,7 +19,7 @@ def delemptydirs(top_path, *, dry_run=False):
     dirs[:] = [dirname for dirname in dirs if not dirname.startswith(".")]
 
   for dir in del_dirs:
-    print("deleting", dir, "...")
+    log.info("deleting", dir, "...")
     if not dry_run:
       send2trash(dir)
 
@@ -24,4 +30,4 @@ if __name__ == "__main__":
   
   top = sys.argv[-1]
   ops = sys.argv[1:-1]
-  delemptydirs(top, dry_run="--dry-run" in ops)
+  main(top, dry_run="--dry-run" in ops)
