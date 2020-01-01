@@ -28,8 +28,8 @@ setup(
             ]
     },
     entry_points={
-        #'console_scripts': [
-        #    'photo-scripts=photo_scripts.__main__:main', ]
+        'console_scripts': [
+            'photo-scripts=photo_scripts.__main__:cli', ]
         },
     python_requires='>=3.6',
     install_requires=install_requirements,
