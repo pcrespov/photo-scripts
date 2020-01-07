@@ -5,14 +5,15 @@ import logging
 import os
 import re
 import sys
+from typing import Tuple
 
 from send2trash import send2trash
 
-from decorators import count_calls, func_runner
+from .decorators import count_calls, func_runner
 
 log = logging.getLogger(__name__)
 
-# Copies are names using the following pattern 
+# The name of a potential copied file follows the same pattern
 PATTERN = re.compile(r"(\(\d\)|copia|copy|-\d{3})\s*\.\w{3,4}$")
 
 def eval_image_hash(image_path):
@@ -23,7 +24,8 @@ def eval_image_hash(image_path):
     image_hash = hashlib.md5(image_file).hexdigest()
   return image_hash
 
-def search_pattern(top):
+def search_pattern(top) -> Tuple[str,str]:
+  ''' Searches under top folder all files with names that matches a copy'''
   for root, dirs, files in os.walk(top):
     for name in files:
       m = PATTERN.search(name)
